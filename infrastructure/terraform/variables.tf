@@ -33,7 +33,7 @@ variable "domain_name" {
 variable "route53_zone_id" {
   description = "The Route 53 Hosted Zone ID to use for ACM DNS validation"
   type        = string
-} 
+}
 
 variable "private_app_subnet_cidrs" {
   description = "Private subnets for application tier (ASG)"

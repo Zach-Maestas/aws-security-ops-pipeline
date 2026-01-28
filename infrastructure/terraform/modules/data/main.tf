@@ -2,7 +2,7 @@
 resource "aws_db_subnet_group" "this" {
   name       = "${var.project}-db-subnet-group"
   subnet_ids = var.private_db_subnet_ids
-  tags = { Name = "${var.project}-db-subnet-group" }
+  tags       = { Name = "${var.project}-db-subnet-group" }
 }
 
 # Database Security Group
@@ -48,7 +48,7 @@ resource "aws_db_instance" "this" {
   backup_retention_period = 7
   deletion_protection     = true
   skip_final_snapshot     = true
-  
+
   lifecycle {
     prevent_destroy = true
     ignore_changes  = [username, password]
