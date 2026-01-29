@@ -5,11 +5,11 @@ Modules for Network, ACM, Application, Data (RDS), and Secrets
 */
 
 module "network" {
-  source               = "./modules/network"
-  project              = var.project
-  vpc_cidr             = var.vpc_cidr
-  azs                  = var.azs
-  public_subnet_cidrs  = var.public_subnet_cidrs
+  source                   = "./modules/network"
+  project                  = var.project
+  vpc_cidr                 = var.vpc_cidr
+  azs                      = var.azs
+  public_subnet_cidrs      = var.public_subnet_cidrs
   private_app_subnet_cidrs = var.private_app_subnet_cidrs
   private_db_subnet_cidrs  = var.private_db_subnet_cidrs
 }
@@ -19,8 +19,8 @@ module "acm" {
   source         = "./modules/acm"
   project        = var.project
   domain_name    = var.domain_name
-  hosted_zone_id = var.route53_zone_id    
-  alb_dns_name = module.app.alb_dns_name
+  hosted_zone_id = var.route53_zone_id
+  alb_dns_name   = module.app.alb_dns_name
 }
 
 # Application Module
@@ -45,16 +45,10 @@ module "data" {
 
 # Secrets Module
 module "secrets" {
-  source        = "./modules/secrets"
-  secret_name   = var.secret_name
-  ec2_role_arn  = module.app.ec2_role_arn
-  vpc_id        = module.network.vpc_id
-}
-
-# Internet Gateway
-resource "aws_internet_gateway" "this" {
-  vpc_id = module.network.vpc_id
-  tags   = { Name = "${var.project}-igw" }
+  source       = "./modules/secrets"
+  secret_name  = var.secret_name
+  ec2_role_arn = module.app.ec2_role_arn
+  vpc_id       = module.network.vpc_id
 }
 
 /*
@@ -62,6 +56,12 @@ resource "aws_internet_gateway" "this" {
 Resources for Routing and NAT
 --------------------------------------------------------------
 */
+
+# Internet Gateway
+resource "aws_internet_gateway" "this" {
+  vpc_id = module.network.vpc_id
+  tags   = { Name = "${var.project}-igw" }
+}
 
 # Elastic IPs for NAT Gateways
 resource "aws_eip" "nat" {

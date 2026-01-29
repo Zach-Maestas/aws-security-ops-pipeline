@@ -13,32 +13,32 @@ resource "aws_lb" "this" {
 
 # ALB HTTP Listener
 resource "aws_lb_listener" "http" {
-    load_balancer_arn = aws_lb.this.arn
-    port              = "80"
-    protocol          = "HTTP"
+  load_balancer_arn = aws_lb.this.arn
+  port              = "80"
+  protocol          = "HTTP"
 
-    default_action {
-      type  = "redirect"
-      redirect {
-        port          = "443"
-        protocol      = "HTTPS"
-        status_code   = "HTTP_301"
-      }
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
     }
+  }
 }
 
 # ALB HTTPS Listener
 resource "aws_lb_listener" "https" {
-    load_balancer_arn = aws_lb.this.arn
-    port              = "443"
-    protocol          = "HTTPS"
-    ssl_policy        = "ELBSecurityPolicy-2016-08"
-    certificate_arn   = var.certificate_arn
+  load_balancer_arn = aws_lb.this.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = var.certificate_arn
 
-    default_action {
-      type             = "forward"
-      target_group_arn = aws_lb_target_group.app.arn 
-    }
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
+  }
 }
 
 # Target Group
@@ -67,9 +67,9 @@ resource "aws_lb_target_group" "app" {
 
 # Launch Template
 resource "aws_launch_template" "this" {
-  name_prefix   = "${var.project}-lt-"
-  image_id      = data.aws_ami.amazon_linux_2.id
-  instance_type = "t3.micro"
+  name_prefix            = "${var.project}-lt-"
+  image_id               = data.aws_ami.amazon_linux_2.id
+  instance_type          = "t3.micro"
   vpc_security_group_ids = [aws_security_group.ec2.id]
 
   iam_instance_profile {
@@ -89,13 +89,13 @@ resource "aws_launch_template" "this" {
 
 # Auto Scaling Group (how many, where, and scaling)
 resource "aws_autoscaling_group" "app" {
-  name                 = "${var.project}-asg"
-  vpc_zone_identifier  = var.private_subnet_ids
-  desired_capacity     = 2
-  min_size             = 1
-  max_size             = 4
-  health_check_type    = "EC2"
-  target_group_arns    = [aws_lb_target_group.app.arn]
+  name                = "${var.project}-asg"
+  vpc_zone_identifier = var.private_subnet_ids
+  desired_capacity    = 2
+  min_size            = 1
+  max_size            = 4
+  health_check_type   = "EC2"
+  target_group_arns   = [aws_lb_target_group.app.arn]
 
   launch_template {
     id      = aws_launch_template.this.id
