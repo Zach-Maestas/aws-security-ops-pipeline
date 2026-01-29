@@ -45,8 +45,3 @@ variable "private_db_subnet_cidrs" {
   type        = list(string)
 }
 
-variable "secret_name" {
-  description = "Name of the existing Secrets Manager secret"
-  type        = string
-}
-

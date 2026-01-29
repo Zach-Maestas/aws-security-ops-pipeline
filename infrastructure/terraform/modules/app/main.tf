@@ -3,7 +3,7 @@ resource "aws_lb" "this" {
   name               = "${var.project}-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
+  security_groups    = [var.alb_sg_id]
   subnets            = var.public_subnet_ids
 
   tags = {
@@ -47,7 +47,7 @@ resource "aws_lb_target_group" "app" {
   port        = 5000
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "instance"
+  target_type = "ip"
 
   health_check {
     path                = "/health"
@@ -65,98 +65,160 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
-# Launch Template
-resource "aws_launch_template" "this" {
-  name_prefix            = "${var.project}-lt-"
-  image_id               = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t3.micro"
-  vpc_security_group_ids = [aws_security_group.ec2.id]
+# ECR Repository
+resource "aws_ecr_repository" "this" {
+  name = "${var.project}-api-repo"
 
-  iam_instance_profile {
-    name = aws_iam_instance_profile.ssm_profile.name
-  }
-
-  user_data = base64encode(file("${path.root}/../scripts/user_data.sh"))
-
-  tag_specifications {
-    resource_type = "instance"
-
-    tags = {
-      Name = "${var.project}-app"
-    }
+  tags = {
+    Name = "${var.project}-api-repo"
   }
 }
 
-# Auto Scaling Group (how many, where, and scaling)
-resource "aws_autoscaling_group" "app" {
-  name                = "${var.project}-asg"
-  vpc_zone_identifier = var.private_subnet_ids
-  desired_capacity    = 2
-  min_size            = 1
-  max_size            = 4
-  health_check_type   = "EC2"
-  target_group_arns   = [aws_lb_target_group.app.arn]
+# ECS Cluster
+resource "aws_ecs_cluster" "this" {
+  name = "${var.project}-ecs-cluster"
 
-  launch_template {
-    id      = aws_launch_template.this.id
-    version = "$Latest"
-  }
-
-  tag {
-    key                 = "Name"
-    value               = "${var.project}-asg"
-    propagate_at_launch = true
+  tags = {
+    Name = "${var.project}-ecs-cluster"
   }
 }
 
-# IAM Role for SSM
-resource "aws_iam_role" "ssm_role" {
-  name = "${var.project}-ec2-ssm-role"
+# ECS Execution Role for App
+resource "aws_iam_role" "ecs_exec_app" {
+  name = "${var.project}-ecs-exec-app-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
+        Effect    = "Allow"
+        Principal = { Service = "ecs-tasks.amazonaws.com" }
+        Action    = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project}-ecs-exec-app-role"
+  }
+}
+
+data "aws_iam_policy_document" "app_exec_secrets" {
+  statement {
+    sid    = "ReadSecretsForInjection"
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:DescribeSecret"
+    ]
+    resources = [
+      var.db_app_credentials_arn
+    ]
+  }
+}
+
+# IAM Policy to allow ECS Task to read DB credentials from Secrets Manager
+resource "aws_iam_policy" "app_secrets_policy" {
+  name        = "${var.project}-app-secrets-policy"
+  description = "Policy to allow ECS task to read DB credentials from Secrets Manager"
+  policy      = data.aws_iam_policy_document.app_exec_secrets.json
+}
+
+# Policy Attachment for ECS App Execution Role
+resource "aws_iam_role_policy_attachment" "ecs_exec_app_policy_attach" {
+  role       = aws_iam_role.ecs_exec_app.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Policy Attachment for App Secrets Access
+resource "aws_iam_role_policy_attachment" "app_secrets_policy_attach" {
+  role       = aws_iam_role.ecs_exec_app.name
+  policy_arn = aws_iam_policy.app_secrets_policy.arn
+}
+
+# ECS Task Definition (API)
+resource "aws_ecs_task_definition" "api" {
+  family                   = "${var.project}-api-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_exec_app.arn
+  container_definitions = jsonencode([
+    {
+      name  = "api-container"
+      image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${aws_ecr_repository.this.name}:latest"
+      portMappings = [
+        {
+          containerPort = 5000
+          hostPort      = 5000
+          protocol      = "tcp"
         }
-      }
-    ]
-  })
+      ]
+
+      environment = [
+        {
+          name  = "DB_HOST"
+          value = var.db_host
+        },
+        {
+          name  = "DB_NAME"
+          value = var.db_name
+        },
+        {
+          name  = "DB_PORT"
+          value = tostring(var.db_port)
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DB_USERNAME"
+          valueFrom = "${var.db_app_credentials_arn}:username::"
+        },
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = "${var.db_app_credentials_arn}:password::"
+        }
+      ]
+    }
+  ])
 }
 
-# Attach the AmazonSSMManagedInstanceCore policy
-resource "aws_iam_role_policy_attachment" "ssm_attach" {
-  role       = aws_iam_role.ssm_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+# ECS Service (API)
+resource "aws_ecs_service" "api" {
+  name            = "${var.project}-api-service"
+  cluster         = aws_ecs_cluster.this.id
+  task_definition = aws_ecs_task_definition.api.arn
+  desired_count   = 0 # Start with 0, let CI/CD initialize DB then add tasks
+  launch_type     = "FARGATE"
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app.arn
+    container_name   = "api-container"
+    container_port   = 5000
+  }
+
+  network_configuration {
+    subnets          = var.private_app_subnet_ids
+    security_groups  = [var.ecs_tasks_sg_id]
+    assign_public_ip = false
+  }
+
+  depends_on = [aws_lb_listener.https]
+
+  tags = {
+    Name = "${var.project}-api-service"
+  }
 }
 
-# IAM Instance Profile for EC2
-resource "aws_iam_instance_profile" "ssm_profile" {
-  name = "${var.project}-ec2-ssm-profile"
-  role = aws_iam_role.ssm_role.name
-}
+/*
+--------------------------------------------------------------
+S3 Bucket for Frontend Hosting
+--------------------------------------------------------------
+*/
 
-# Secrets Manager Access Policy (to allow EC2 to read DB credentials)
-resource "aws_iam_role_policy" "secrets_access" {
-  name = "${var.project}-secrets-access"
-  role = aws_iam_role.ssm_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect   = "Allow",
-        Action   = ["secretsmanager:GetSecretValue"],
-        Resource = data.aws_secretsmanager_secret.db.arn
-      }
-    ]
-  })
-}
-
-# S3 Bucket for Frontend Hosting
+# S3 Bucket
 resource "aws_s3_bucket" "frontend" {
   bucket        = "${var.project}-frontend"
   force_destroy = false

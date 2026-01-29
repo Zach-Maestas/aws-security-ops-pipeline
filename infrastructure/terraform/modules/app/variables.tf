@@ -9,12 +9,17 @@ variable "vpc_id" {
 }
 
 variable "public_subnet_ids" {
-  description = "List of public subnet IDs"
+  description = "List of public subnet IDs (for ALB)"
   type        = list(string)
 }
 
-variable "private_subnet_ids" {
-  description = "List of private subnet IDs"
+variable "private_app_subnet_ids" {
+  description = "List of private subnet IDs (for ECS tasks)"
+  type        = list(string)
+}
+
+variable "private_db_subnet_ids" {
+  description = "List of private subnet IDs (for RDS)"
   type        = list(string)
 }
 
@@ -23,7 +28,32 @@ variable "certificate_arn" {
   type        = string
 }
 
-variable "secret_name" {
-  description = "Name of the existing Secrets Manager secret"
+variable "db_app_credentials_arn" {
+  description = "ARN of the Secrets Manager secret for DB app credentials"
   type        = string
+}
+
+variable "alb_sg_id" {
+  description = "Security Group ID for the ALB"
+  type        = string
+}
+
+variable "ecs_tasks_sg_id" {
+  description = "Security Group ID for the ECS tasks"
+  type        = string
+}
+
+variable "db_host" {
+  description = "Hostname of the database"
+  type        = string
+}
+
+variable "db_name" {
+  description = "Name of the database"
+  type        = string
+}
+
+variable "db_port" {
+  description = "Port number of the database"
+  type        = number
 }
