@@ -65,8 +65,8 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
-# ECR Repository
-resource "aws_ecr_repository" "this" {
+# ECR Repository (API)
+resource "aws_ecr_repository" "ecr_api_repo" {
   name = "${var.project}-api-repo"
 
   tags = {
@@ -97,6 +97,7 @@ resource "aws_iam_role" "ecs_exec_app" {
       }
     ]
   })
+  
 
   tags = {
     Name = "${var.project}-ecs-exec-app-role"
@@ -147,7 +148,7 @@ resource "aws_ecs_task_definition" "api" {
   container_definitions = jsonencode([
     {
       name  = "api-container"
-      image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${aws_ecr_repository.this.name}:latest"
+      image = "${aws_ecr_repository.ecr_api_repo.repository_url}:${var.api_image_tag}"
       portMappings = [
         {
           containerPort = 5000

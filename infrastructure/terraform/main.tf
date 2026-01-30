@@ -30,6 +30,15 @@ module "data" {
   rds_sg_id             = module.network.rds_sg_id
 }
 
+# ACM Certificate
+module "acm" {
+  source         = "./modules/acm"
+  project        = var.project
+  domain_name    = var.domain_name
+  hosted_zone_id = var.route53_zone_id
+}
+
+
 # Application Module
 module "app" {
   source                 = "./modules/app"
@@ -45,14 +54,7 @@ module "app" {
   db_host                = module.data.db_host
   db_name                = module.data.db_name
   db_port                = module.data.db_port
-}
-
-# ACM Certificate
-module "acm" {
-  source         = "./modules/acm"
-  project        = var.project
-  domain_name    = var.domain_name
-  hosted_zone_id = var.route53_zone_id
+  rds_master_secret_arn  = module.data.rds_master_secret_arn
 }
 
 /*
