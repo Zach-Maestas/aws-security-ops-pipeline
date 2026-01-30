@@ -12,3 +12,8 @@ output "db_port" {
   description = "Database port"
   value       = var.db_port
 }
+
+output "rds_master_secret_arn" {
+  description = "ARN of the RDS master secret"
+  value       = aws_db_instance.this.master_user_secret[0].secret_arn
+}

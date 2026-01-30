@@ -57,3 +57,18 @@ variable "db_port" {
   description = "Port number of the database"
   type        = number
 }
+
+variable "rds_master_secret_arn" {
+  description = "ARN of the RDS master secret"
+  type        = string
+}
+
+variable "api_image_tag" {
+  description = "Docker image tag for the API container"
+  type        = string
+}
+
+variable "db_init_image_tag" {
+  description = "Docker image tag for the DB Init container"
+  type        = string
+}
