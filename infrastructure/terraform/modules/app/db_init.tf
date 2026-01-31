@@ -69,7 +69,8 @@ resource "aws_iam_role_policy_attachment" "db_init_secrets_policy_attach" {
 
 # ECR Repository (DB Init)
 resource "aws_ecr_repository" "ecr_db_init_repo" {
-  name = "${var.project}-db-init-repo"
+  name         = "${var.project}-db-init-repo"
+  force_delete = true
 
   tags = {
     Name = "${var.project}-db-init-repo"

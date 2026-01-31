@@ -80,7 +80,8 @@ resource "aws_lb_target_group" "app" {
 
 # ECR Repository (API)
 resource "aws_ecr_repository" "ecr_api_repo" {
-  name = "${var.project}-api-repo"
+  name         = "${var.project}-api-repo"
+  force_delete = true
 
   tags = {
     Name = "${var.project}-api-repo"
@@ -214,6 +215,10 @@ resource "aws_ecs_service" "api" {
     container_port   = 5000
   }
 
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
   network_configuration {
     subnets          = var.private_app_subnet_ids
     security_groups  = [var.ecs_tasks_sg_id]
@@ -226,61 +231,4 @@ resource "aws_ecs_service" "api" {
     Name = "${var.project}-api-service"
   }
 }
-
-/*
-==============================================================================
-S3 Bucket for Frontend Hosting
-==============================================================================
-*/
-
-# S3 Bucket
-resource "aws_s3_bucket" "frontend" {
-  bucket = "${var.project}-frontend"
-
-  tags = {
-    Name = "${var.project}-frontend"
-  }
-}
-
-# Configure the website hosting (index and error docs)
-resource "aws_s3_bucket_website_configuration" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
-
-  index_document {
-    suffix = "index.html"
-  }
-
-  error_document {
-    key = "index.html"
-  }
-}
-
-# Disable Block Public Access settings
-resource "aws_s3_bucket_public_access_block" "frontend" {
-  bucket                  = aws_s3_bucket.frontend.id
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-# Allow public reads for the website
-resource "aws_s3_bucket_policy" "frontend_public" {
-  bucket = aws_s3_bucket.frontend.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = ["s3:GetObject"]
-        Resource  = "${aws_s3_bucket.frontend.arn}/*"
-      }
-    ]
-  })
-}
-
-
 

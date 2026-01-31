@@ -11,7 +11,7 @@ NC     := \033[0m # No Color
 
 # Project variables
 TERRAFORM_DIR := infrastructure/terraform
-SCRIPTS_DIR   := infrastructure/scripts/services_boostrap
+SCRIPTS_DIR   := infrastructure/scripts/deploy
 
 ##@ General
 

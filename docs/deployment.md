@@ -1,141 +1,141 @@
 # Deployment Guide
 
-This guide explains how to deploy, verify, and tear down the **Secure AWS Architecture Capstone** using Terraform.  
-It’s written for clarity and reproducibility, and demonstrates professional IaC documentation standards.
+Detailed steps for deploying, verifying, and tearing down the infrastructure. For a quick overview, see the [README](../README.md#quick-start).
 
 ---
 
-## ⚙️ Prerequisites
-
-Before deploying, confirm your local environment and AWS account are properly configured.
+## Prerequisites
 
 ### Required Tools
-Install:
-- Terraform v1.6 or newer  
-- AWS CLI v2  
-- Git  
 
-After installation, confirm each tool is working (you’ll verify versions manually).
+| Tool | Minimum Version | Verify |
+|------|----------------|--------|
+| AWS CLI | v2 | `aws --version` |
+| Terraform | >= 1.0 | `terraform --version` |
+| Docker | with buildx | `docker buildx version` |
+| GNU Make | any | `make --version` |
 
-### AWS Account Permissions
-Use an IAM user or role with permissions to manage:
-- VPC  
-- EC2  
-- IAM  
-- S3  
-- Route 53  
-- ACM  
-- RDS (if deploying the database)
+### AWS Account Setup
 
-Recommended managed policies:
-- AmazonVPCFullAccess
-- AmazonEC2FullAccess
-- IAMFullAccess
-- AmazonRoute53FullAccess
-- AWSCertificateManagerFullAccess
-- AmazonS3FullAccess
-- AmazonRDSFullAccess
+1. **AWS CLI configured** — run `aws sts get-caller-identity` to confirm.
+2. **Required permissions** — your IAM identity needs access to manage:
+   - VPC, Subnets, Security Groups, NAT/Internet Gateways
+   - ECS (clusters, services, task definitions)
+   - ECR (repositories, image push)
+   - RDS (instances, subnet groups)
+   - ALB (load balancers, target groups, listeners)
+   - ACM (certificates)
+   - Secrets Manager
+   - IAM (roles, policies)
+   - CloudWatch Logs
+   - Route 53 (DNS records)
 
-### Configure AWS CLI
-Run `aws configure`, then verify with `aws sts get-caller-identity`.
+3. **Route 53 hosted zone** — a hosted zone must exist for your domain. The ACM module uses DNS validation against it.
+
+4. **Terraform state backend** — state is stored locally by default. For shared/remote state, configure an S3 backend in `infrastructure/terraform/main.tf`.
 
 ---
 
-## 📁 Project Structure
+## Deployment
 
-All Terraform files live in `/infrastructure`, organized by module for modularity and clarity.
+### One-Command Deploy
 
-Each module defines a major layer:
-- **network/** – VPC, subnets, gateways, routing, endpoints  
-- **app/** – ALB, EC2, Auto Scaling, security groups  
-- **data/** – RDS and Secrets Manager integration  
-- **acm/** – Certificate creation and DNS validation
-- **secrets/** – Secrets management  
+```bash
+make deploy
+```
 
----
+This runs the following steps in order:
 
-## 🚀 Deployment Steps
+| Step | Make Target | What It Does |
+|------|------------|--------------|
+| 1 | `terraform-apply` | Provisions all AWS resources (VPC, ECS, RDS, ALB, ECR, etc.) |
+| 2 | `build` | Builds API and DB init Docker images, pushes to ECR |
+| 3 | `db-init` | Runs a one-off ECS task to initialize the RDS schema |
+| 4 | `scale-up` | Scales the ECS API service to 1 running task |
 
-### 1. Clone the Repository
-Clone the repo and navigate into the infrastructure directory.
-`git clone https://github.com/Zach-Maestas/secure-aws-architecture-capstone.git`
-`cd secure-aws-architecture-capstone/infrastructure`
+### Step-by-Step (Manual)
 
-### 2. Initialize Terraform
-Initialize the working directory, install providers, and set up the backend.
-`terraform init`
-You should see confirmation that Terraform initialized successfully.
+If you need to run individual steps or debug:
 
-### 3. Validate the Configuration
-Validate all Terraform files to ensure there are no syntax or reference errors.
-`terraform validate`
-A “Success! The configuration is valid.” message confirms correctness.
+```bash
+# 1. Initialize and apply Terraform
+make terraform-apply
 
-### 4. Review the Execution Plan
-Generate a plan to preview the infrastructure Terraform will create or modify.
-`terraform plan -out=tfplan`
-Inspect the plan output to confirm resources and dependencies before proceeding.
+# 2. Build and push container images to ECR
+make build
 
-### 5. Apply the Infrastructure
-Apply the saved plan to provision the AWS environment.
-`terraform apply "tfplan"`
+# 3. Run database initialization
+make db-init
 
-Confirm when prompted. Terraform will begin creating resources including:
-- VPC and subnets across two Availability Zones  
-- Internet and NAT Gateways  
-- Route tables and VPC endpoints  
-- ACM certificate with DNS validation  
-- Application Load Balancer with HTTPS  
-- (Optional) EC2 instances and RDS  
-
-Deployment typically takes 10–15 minutes.
+# 4. Start the API service
+make scale-up
+```
 
 ---
 
-## 🔍 Verification
+## Verification
 
-Once deployment completes, note the output values:
-- ALB DNS name  
-- S3 website endpoint (if used)  
-- RDS endpoint (if provisioned)
+After deployment completes, verify the stack:
 
-Verify:
-1. Navigate to the ALB DNS name in a browser using HTTPS.  
-2. Confirm a valid SSL certificate and secure connection.  
-3. Check AWS Console for:
-   - VPC structure (public, private-app, and private-db subnets)
-   - Route tables correctly associated
-   - ACM certificate status “Issued”
-   - ALB listeners on ports 80 and 443
-   - RDS not publicly accessible
+```bash
+# Check service status
+make status
 
----
+# Test endpoints
+curl https://api.zachmaestas-capstone.com/health
+curl https://api.zachmaestas-capstone.com/ready
+curl https://api.zachmaestas-capstone.com/items
+```
 
-## 🧹 Teardown
-
-To safely destroy resources when finished testing:
-`terraform destroy`
-If you receive errors about `prevent_destroy` protections, update your variables or module settings to temporarily disable them, or use targeted destroys such as:
-`terraform destroy -target=aws_s3_bucket.frontend`
-
+### What to check in AWS Console
+- **ECS** — cluster shows 1 running task, no stopped tasks with errors
+- **ALB** — target group shows healthy targets
+- **RDS** — instance status is "Available"
+- **CloudWatch Logs** — `/ecs/devsecops-security-ops-api-task` shows Flask startup logs
 
 ---
 
-## ⚠️ Notes & Tips
+## Teardown
 
-- Keep Terraform state remote in S3 with a DynamoDB lock for production use.  
-- Never commit `.tfstate` files or secrets to GitHub.  
-- ACM DNS validation can take a few minutes; rerun `terraform apply` if needed.  
-- Destroy stacks when not in use to minimize AWS costs.  
+```bash
+make destroy
+```
+
+This scales down the ECS service, then runs `terraform destroy` to remove all resources.
+
+### Partial Teardown Failures
+
+If `make destroy` fails partway (e.g., ECS cluster already gone):
+
+```bash
+# Skip scale-down, go straight to terraform destroy
+make terraform-destroy
+```
+
+### ECR Repositories
+
+ECR repos are configured with `force_delete = true`, so they will be destroyed even if they still contain images.
 
 ---
 
-## 🧩 Next Phase
+## Redeployment (Code Changes Only)
 
-This project serves as **Capstone 1** in a three-part Cloud Security Engineering portfolio.  
-The next phase, the **[CloudOps Capstone](https://github.com/Zach-Maestas/cloudops-capstone)**, builds upon this foundation with CI/CD, monitoring, scaling, and automated security operations.
+If you've changed application code but infrastructure is still up:
+
+```bash
+make redeploy
+```
+
+This rebuilds images, scales down, and scales back up — without re-running Terraform.
 
 ---
 
+## Troubleshooting
 
-
+| Symptom | Check | Fix |
+|---------|-------|-----|
+| ECS task keeps stopping | `make logs` or CloudWatch `/ecs/devsecops-security-ops-api-task` | Check container exit code and error message |
+| ALB target unhealthy | Target group health check in AWS Console | Verify `/health` returns 200, security groups allow ALB → ECS |
+| DB connection refused | ECS task logs for connection errors | Check RDS security group allows inbound from ECS SG on port 5432 |
+| Terraform apply fails | Terraform error output | Common: state drift, resource limits, permission denied |
+| ECR push fails | Docker login and buildx errors | Re-run `aws ecr get-login-password` or check IAM ECR permissions |
