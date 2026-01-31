@@ -32,6 +32,8 @@ echo "==> Waiting for tasks to stabilize (30 seconds)..."
 sleep 30
 
 # Check service status
+API_URL="https://api.zachmaestas-capstone.com"
+
 echo "==> Current service status:"
 aws ecs describe-services \
   --cluster "${CLUSTER_NAME}" \
@@ -56,9 +58,9 @@ if [ "${DESIRED_COUNT}" -gt 0 ]; then
   echo "✅ ECS service scaled to ${DESIRED_COUNT} task(s)"
   echo ""
   echo "Test the API:"
-  echo "  curl https://api.zachmaestas-capstone.com/health"
-  echo "  curl https://api.zachmaestas-capstone.com/ready"
-  echo "  curl https://api.zachmaestas-capstone.com/items"
+  echo "  curl ${API_URL}/health"
+  echo "  curl ${API_URL}/ready"
+  echo "  curl ${API_URL}/items"
 else
   echo ""
   echo "✅ ECS service scaled down to 0 tasks"
