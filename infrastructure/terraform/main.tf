@@ -1,7 +1,20 @@
 /*
---------------------------------------------------------------
-Modules for Network, ACM, Application, Data (RDS), and Secrets
---------------------------------------------------------------
+==============================================================================
+Root Configuration: DevSecOps Security Operations Platform
+==============================================================================
+Orchestrates all infrastructure modules for a secure, multi-tier web application:
+- Network: VPC, subnets, routing, NAT gateways
+- Secrets: Application database credentials
+- Data: RDS PostgreSQL database
+- ACM: TLS certificate for HTTPS
+- App: ALB, ECS Fargate, ECR, S3 frontend hosting
+
+This configuration deploys a production-ready architecture with:
+- Encrypted data at rest and in transit
+- Least-privilege IAM and security groups
+- Private subnet placement for sensitive resources
+- Automated certificate management
+==============================================================================
 */
 
 # Network Module
@@ -38,7 +51,6 @@ module "acm" {
   hosted_zone_id = var.route53_zone_id
 }
 
-
 # Application Module
 module "app" {
   source                 = "./modules/app"
@@ -58,9 +70,9 @@ module "app" {
 }
 
 /*
---------------------------------------------------------------
-Resources for Routing and NAT
---------------------------------------------------------------
+==============================================================================
+Internet Connectivity: IGW, NAT, and VPC Endpoints
+==============================================================================
 */
 
 # Internet Gateway
@@ -114,9 +126,9 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 /*
---------------------------------------------------------------
-Route 53 Record for ALB
---------------------------------------------------------------
+==============================================================================
+DNS: Route 53 Record for ALB
+==============================================================================
 */
 
 # Create Route 53 A record for the API pointing to the ALB
@@ -131,7 +143,3 @@ resource "aws_route53_record" "api_record" {
     evaluate_target_health = true
   }
 }
-
-
-
-

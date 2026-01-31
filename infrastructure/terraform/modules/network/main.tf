@@ -1,4 +1,16 @@
-# Create a VPC
+/*
+==============================================================================
+Network Module: VPC and Subnet Configuration
+==============================================================================
+Provisions a multi-AZ VPC with:
+- Public subnets for ALB (internet-facing)
+- Private application subnets for ECS tasks
+- Private database subnets for RDS
+- Route tables for public and private routing
+==============================================================================
+*/
+
+# VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true

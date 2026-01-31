@@ -1,4 +1,17 @@
-# ECS Execution Role for DB Init
+/*
+==============================================================================
+DB Init Task: Database Initialization Infrastructure
+==============================================================================
+Provisions ECS task definition for one-time database initialization:
+- Creates schema and tables
+- Creates application database user with least-privilege permissions
+- Sets password from Secrets Manager
+- Seeds initial data
+This task is run once after infrastructure deployment.
+==============================================================================
+*/
+
+# ECS Execution Role for DB Init Task
 resource "aws_iam_role" "ecs_exec_db_init" {
   name = "${var.project}-ecs-exec-db-init-role"
 
@@ -12,7 +25,7 @@ resource "aws_iam_role" "ecs_exec_db_init" {
       }
     ]
   })
-  
+
 
   tags = {
     Name = "${var.project}-ecs-exec-db-init-role"
@@ -29,7 +42,8 @@ data "aws_iam_policy_document" "db_init_exec_secrets" {
       "secretsmanager:DescribeSecret"
     ]
     resources = [
-      var.rds_master_secret_arn
+      var.rds_master_secret_arn,
+      var.db_app_credentials_arn
     ]
   }
 }
@@ -55,7 +69,8 @@ resource "aws_iam_role_policy_attachment" "db_init_secrets_policy_attach" {
 
 # ECR Repository (DB Init)
 resource "aws_ecr_repository" "ecr_db_init_repo" {
-  name = "${var.project}-db-init-repo"
+  name         = "${var.project}-db-init-repo"
+  force_delete = true
 
   tags = {
     Name = "${var.project}-db-init-repo"
@@ -81,7 +96,7 @@ resource "aws_ecs_task_definition" "db_init" {
           value = var.db_host
         },
         {
-          name  = "PGDATABASE" 
+          name  = "PGDATABASE"
           value = var.db_name
         },
         {
@@ -94,10 +109,18 @@ resource "aws_ecs_task_definition" "db_init" {
         {
           name      = "PGUSER"
           valueFrom = "${var.rds_master_secret_arn}:username::"
-        },  
+        },
         {
           name      = "PGPASSWORD"
           valueFrom = "${var.rds_master_secret_arn}:password::"
+        },
+        {
+          name      = "APP_DB_USERNAME"
+          valueFrom = "${var.db_app_credentials_arn}:username::"
+        },
+        {
+          name      = "APP_DB_PASSWORD"
+          valueFrom = "${var.db_app_credentials_arn}:password::"
         }
       ]
     }

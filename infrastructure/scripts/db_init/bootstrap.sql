@@ -13,6 +13,10 @@ BEGIN
 END
 $$;
 
+-- Set password using psql variable (passed via psql -v app_password="...")
+-- This always updates the password, which is good for secret rotation
+ALTER ROLE app_items_rw WITH PASSWORD :'app_password';
+
 -- Grant least privilege to the app role
 GRANT USAGE ON SCHEMA public TO app_items_rw;
 
