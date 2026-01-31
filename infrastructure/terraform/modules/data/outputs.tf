@@ -1,16 +1,19 @@
-output "db_endpoint" {
-  description = "RDS endpoint (hostname:port) for the database"
-  value       = aws_db_instance.this.endpoint
-  sensitive   = true
+output "db_host" {
+  description = "RDS hostname"
+  value       = aws_db_instance.this.address
+}
+
+output "db_name" {
+  description = "Database name"
+  value       = var.db_name
 }
 
 output "db_port" {
   description = "Database port"
-  value       = aws_db_instance.this.port
-  sensitive   = true
+  value       = var.db_port
 }
 
-output "db_sg_id" {
-  description = "Security group ID assigned to the RDS instance"
-  value       = aws_security_group.db.id
+output "rds_master_secret_arn" {
+  description = "ARN of the RDS master secret"
+  value       = aws_db_instance.this.master_user_secret[0].secret_arn
 }

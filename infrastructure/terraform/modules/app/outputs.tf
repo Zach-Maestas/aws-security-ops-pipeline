@@ -1,31 +1,18 @@
 # ALB
-output "alb_sg_id" {
-  description = "Security group ID for the ALB"
-  value = aws_security_group.alb.id
-}
-
-# EC2
-output "ec2_sg_id" {
-  description = "Security group ID for the EC2 instances"
-  value = aws_security_group.ec2.id
-}
-
-# ALB
 output "alb_dns_name" {
   description = "DNS name of the ALB"
-  value = aws_lb.this.dns_name
+  value       = aws_lb.this.dns_name
+}
+
+output "alb_zone_id"  { 
+  description = "Zone ID of the ALB"
+  value = aws_lb.this.zone_id 
 }
 
 # Target Group
 output "target_group_arn" {
   description = "ARN of the target group"
-  value = aws_lb_target_group.app.arn
-}
-
-# EC2 IAM Role
-output "ec2_role_arn" {
-  description = "ARN of the EC2 IAM role attached to app instances"
-  value       = aws_iam_role.ssm_role.arn
+  value       = aws_lb_target_group.app.arn
 }
 
 # S3 Website Endpoint

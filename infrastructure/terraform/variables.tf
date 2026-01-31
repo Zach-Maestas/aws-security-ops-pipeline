@@ -33,7 +33,7 @@ variable "domain_name" {
 variable "route53_zone_id" {
   description = "The Route 53 Hosted Zone ID to use for ACM DNS validation"
   type        = string
-} 
+}
 
 variable "private_app_subnet_cidrs" {
   description = "Private subnets for application tier (ASG)"
@@ -43,10 +43,5 @@ variable "private_app_subnet_cidrs" {
 variable "private_db_subnet_cidrs" {
   description = "Private subnets for RDS and failover"
   type        = list(string)
-}
-
-variable "secret_name" {
-  description = "Name of the existing Secrets Manager secret"
-  type        = string
 }
 

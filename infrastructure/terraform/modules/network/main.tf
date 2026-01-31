@@ -67,7 +67,7 @@ resource "aws_route_table_association" "public_subnets" {
 }
 
 # Private Route Tables (for private_app and private_db)
-# You’ll have one per AZ; both App and DB subnets in that AZ can share it if desired
+# One per AZ; both App and DB subnets in that AZ can share it if desired
 resource "aws_route_table" "private" {
   count  = length(var.azs)
   vpc_id = aws_vpc.main.id
