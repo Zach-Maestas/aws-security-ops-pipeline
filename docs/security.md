@@ -1,95 +1,120 @@
 # Security Design
 
-This document outlines the key security controls and design principles implemented in the **Secure AWS Architecture Capstone**.  
-The infrastructure was built with defense-in-depth, least privilege, and AWS Well-Architected best practices in mind.
+This document details the security controls implemented in the AWS DevSecOps Security Operations project. For a summary, see the [README security controls table](../README.md#security-controls).
 
 ---
 
-## 🧱 Network Security
+## Network Security
 
 ### VPC Segmentation
-The network follows a **three-tier architecture**:
-- **Public Subnets** – contain only the Application Load Balancer (ALB) and NAT Gateways.  
-  - ALB accepts HTTPS traffic only.  
-  - NAT Gateways allow private subnets outbound internet access for updates.
-- **Private App Subnets** – host EC2 instances or containers running the application backend.  
-  - No direct internet access.  
-  - Outbound-only via NAT Gateway.  
-  - Inbound allowed **only** from ALB security group.
-- **Private DB Subnets** – dedicated for Amazon RDS.  
-  - No internet access.  
-  - Accessible only from private app subnets through the database port (default 5432 for PostgreSQL).
 
-### Routing & Gateways
-- **Internet Gateway (IGW)** attached only to public subnets.  
-- **NAT Gateways** used for outbound updates in private tiers.  
-- **S3 Gateway Endpoint** allows private access to S3 without traversing the internet.  
-- Route tables are explicitly defined and associated per subnet type.
+The network uses a three-tier subnet architecture across two Availability Zones:
 
----
-
-## 🔒 Access Control
-
-### IAM Roles & Policies
-- **Principle of Least Privilege (PoLP)** enforced for all resources.  
-- EC2 instances use **instance profiles** for access to limited AWS services (e.g., Secrets Manager, CloudWatch).  
-- Separate IAM roles for Terraform state management vs runtime components.  
-- Terraform runs under a **dedicated IAM user or assumed role** with fine-grained permissions.  
-- Inline policies avoided; instead, **managed and reusable policies** are attached to roles.
-
-### SSH & Management
-- Direct SSH access to instances is **disabled by default**.  
-- When necessary, access is done via **AWS Systems Manager Session Manager** for audited, temporary access.  
-- No hardcoded credentials or key pairs stored in Terraform files.
-
----
-
-## 🧩 Data Protection
-
-### Encryption
-- **At Rest:**  
-  - S3 buckets have **default encryption (AES-256)** enabled.  
-  - RDS storage encrypted using **AWS KMS-managed keys**.  
-  - Secrets stored in **AWS Secrets Manager** are encrypted automatically with KMS.
-- **In Transit:**  
-  - HTTPS enforced via **AWS ACM-issued certificate** on the ALB.  
-  - ALB redirects all HTTP traffic to HTTPS (port 443).  
-  - Internal connections restricted to private VPC CIDR ranges.
-
-### Secrets Management
-- Database credentials and other sensitive values are stored in **AWS Secrets Manager**.  
-- Secrets are referenced dynamically in Terraform rather than hardcoded in variables.  
-- Application instances use IAM roles to retrieve secrets securely at runtime.
-
----
-
-## 🛡️ Infrastructure Safeguards
+| Tier | Subnets | Contains | Internet Access |
+|------|---------|----------|----------------|
+| Public | `public-1`, `public-2` | ALB, NAT Gateways | Direct (IGW) |
+| Private App | `private-app-1`, `private-app-2` | ECS Fargate tasks | Outbound only (NAT) |
+| Private Data | `private-db-1`, `private-db-2` | RDS PostgreSQL | None |
 
 ### Security Groups
-Each layer has its own security group:
-- **ALB SG:** Allows inbound 80/443 from the internet, outbound to app SG.  
-- **App SG:** Allows inbound from ALB SG only, outbound to DB SG.  
-- **DB SG:** Allows inbound from app SG only, no public access.
 
-### Network ACLs
-- NACLs provide a second layer of subnet-level protection.  
-- Default deny-all inbound for non-explicit traffic.  
-- Outbound rules scoped to required CIDR ranges only.
+Security groups enforce layer-to-layer traffic flow:
 
-### Lifecycle Protections
-Critical resources (e.g., RDS, S3) include:
-```hcl
-lifecycle {
-  prevent_destroy = true
-}
 ```
-This prevents accidental deletion of persistent data.
+Internet → [ALB SG: 443 inbound] → [ECS SG: app port from ALB SG only] → [RDS SG: 5432 from ECS SG only]
+```
 
-### 🔐 Summary
+| Security Group | Inbound | Outbound |
+|---------------|---------|----------|
+| ALB | 443 from `0.0.0.0/0` | App port to ECS SG |
+| ECS Tasks | App port from ALB SG | 5432 to RDS SG, 443 to internet (NAT) |
+| RDS | 5432 from ECS SG | None required |
 
-This architecture prioritizes:
-- Layered defense through subnet isolation and strict routing.
-- Identity-based access using IAM roles instead of static credentials.
-- Encrypted storage and communication at all times.
-- Logging and monitoring for continuous visibility and incident response.
-These controls collectively deliver a secure, resilient, and auditable AWS environment suitable for production-grade workloads.
+No security group allows `0.0.0.0/0` on any port other than the ALB's HTTPS listener.
+
+### Routing
+
+- **Internet Gateway** — attached to public subnets only.
+- **NAT Gateway** — provides outbound internet for private app subnets (image pulls, API calls).
+- **Private data subnets** — no route to the internet in either direction.
+
+---
+
+## Identity & Access Management
+
+### ECS Task Roles
+
+Two separate IAM roles with distinct responsibilities:
+
+| Role | Purpose | Permissions |
+|------|---------|-------------|
+| Execution Role | ECS agent pulls images and writes logs | ECR read, CloudWatch Logs write, Secrets Manager read |
+| Task Role | Application runtime identity | Scoped to only what the app needs |
+
+### Least Privilege Approach
+
+- No `*` resource wildcards on sensitive actions.
+- Execution role can only read specific secrets, not all secrets in the account.
+- Task role is scoped to application needs — not reused across services.
+
+---
+
+## Secrets Management
+
+### How Credentials Flow
+
+```
+Secrets Manager → ECS Task Definition (valueFrom) → Container environment variable → Application
+```
+
+- DB credentials are stored in AWS Secrets Manager, not in Terraform variables, environment files, or code.
+- The ECS task definition references secrets by ARN using `valueFrom` — credentials are injected at container startup.
+- The execution role has permission to read only the specific secret ARNs needed.
+- No secret values appear in Terraform state as plaintext resource attributes.
+
+---
+
+## Transport Security
+
+- **ALB Listener** — HTTPS (443) with ACM-issued TLS certificate.
+- **HTTP redirect** — port 80 redirects to 443.
+- **ACM validation** — DNS validation via Route 53 (automated in Terraform).
+
+---
+
+## Container Security
+
+- **Non-root user** — the Dockerfile sets a non-root `USER` for the application process.
+- **Minimal base image** — Python slim variant, reducing attack surface.
+- **No SSH** — Fargate tasks have no SSH daemon; debugging is done through CloudWatch Logs.
+- **Immutable deployments** — new code requires a new image push and service update.
+
+---
+
+## What This Architecture Does NOT Include (Yet)
+
+These are planned for future phases and documented here for transparency:
+
+| Gap | Planned Phase | Notes |
+|-----|--------------|-------|
+| CI/CD pipeline | Phase 1 | No automated build/deploy yet |
+| OIDC for CI | Phase 1 | Current deploys use local AWS credentials |
+| CloudTrail audit logging | Phase 2 | No API-level audit trail |
+| GuardDuty threat detection | Phase 2 | No automated threat detection |
+| Security Hub posture | Phase 2 | No centralized findings dashboard |
+| Container image scanning | Phase 3 | No vulnerability scanning on images |
+| IaC scanning (tfsec/checkov) | Phase 3 | No static analysis on Terraform |
+| Secret detection in code | Phase 3 | No pre-commit or CI secret scanning |
+| Encryption at rest (RDS/KMS) | Future | RDS uses default encryption, not CMK |
+| WAF on ALB | Future | No web application firewall layer |
+| VPC Flow Logs | Future | No network traffic logging |
+
+---
+
+## Security Trade-offs
+
+<!-- TODO(human): Write 3-5 trade-offs you consciously made in this project. For each one: what did you choose, what's the risk, and why is it acceptable for a portfolio project? Example format:
+
+**[Trade-off title]**
+Chose X over Y because Z. The risk is [risk]. Acceptable here because [reason], but in production I would [what you'd change].
+-->

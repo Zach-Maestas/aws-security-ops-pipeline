@@ -20,7 +20,7 @@ logger.info("api_starting")
 # ------------------------------------------------------------------------------
 # Environment Validation
 # ------------------------------------------------------------------------------
-required_vars = ["DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"]
+required_vars = ["DB_HOST", "DB_NAME", "DB_USERNAME", "DB_PASSWORD"]
 missing = [v for v in required_vars if not os.environ.get(v)]
 if missing:
     logger.warning(f"⚠️ Missing DB env vars: {', '.join(missing)}. DB routes may fail.")

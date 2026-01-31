@@ -1,3 +1,16 @@
+/*
+==============================================================================
+App Module: Application Infrastructure
+==============================================================================
+Provisions application tier components:
+- Application Load Balancer (ALB) with HTTPS
+- ECS Fargate cluster and service
+- ECR repositories for container images
+- IAM roles for ECS task execution
+- S3 bucket for static frontend hosting
+==============================================================================
+*/
+
 # Application Load Balancer
 resource "aws_lb" "this" {
   name               = "${var.project}-alb"
@@ -67,7 +80,8 @@ resource "aws_lb_target_group" "app" {
 
 # ECR Repository (API)
 resource "aws_ecr_repository" "ecr_api_repo" {
-  name = "${var.project}-api-repo"
+  name         = "${var.project}-api-repo"
+  force_delete = true
 
   tags = {
     Name = "${var.project}-api-repo"
@@ -97,7 +111,7 @@ resource "aws_iam_role" "ecs_exec_app" {
       }
     ]
   })
-  
+
 
   tags = {
     Name = "${var.project}-ecs-exec-app-role"
@@ -188,16 +202,21 @@ resource "aws_ecs_task_definition" "api" {
 
 # ECS Service (API)
 resource "aws_ecs_service" "api" {
-  name            = "${var.project}-api-service"
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.api.arn
-  desired_count   = 0 # Start with 0, let CI/CD initialize DB then add tasks
-  launch_type     = "FARGATE"
+  name                               = "${var.project}-api-service"
+  cluster                            = aws_ecs_cluster.this.id
+  task_definition                    = aws_ecs_task_definition.api.arn
+  desired_count                      = var.api_desired_count
+  deployment_minimum_healthy_percent = 0 # Allow zero-downtime deployments
+  launch_type                        = "FARGATE"
 
   load_balancer {
     target_group_arn = aws_lb_target_group.app.arn
     container_name   = "api-container"
     container_port   = 5000
+  }
+
+  lifecycle {
+    ignore_changes = [desired_count]
   }
 
   network_configuration {
@@ -212,66 +231,4 @@ resource "aws_ecs_service" "api" {
     Name = "${var.project}-api-service"
   }
 }
-
-/*
---------------------------------------------------------------
-S3 Bucket for Frontend Hosting
---------------------------------------------------------------
-*/
-
-# S3 Bucket
-resource "aws_s3_bucket" "frontend" {
-  bucket        = "${var.project}-frontend"
-  force_destroy = false
-
-  lifecycle {
-    prevent_destroy = true
-  }
-
-  tags = {
-    Name = "${var.project}-frontend"
-  }
-}
-
-# Configure the website hosting (index and error docs)
-resource "aws_s3_bucket_website_configuration" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
-
-  index_document {
-    suffix = "index.html"
-  }
-
-  error_document {
-    key = "index.html"
-  }
-}
-
-# Disable Block Public Access settings
-resource "aws_s3_bucket_public_access_block" "frontend" {
-  bucket                  = aws_s3_bucket.frontend.id
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-# Allow public reads for the website
-resource "aws_s3_bucket_policy" "frontend_public" {
-  bucket = aws_s3_bucket.frontend.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = ["s3:GetObject"]
-        Resource  = "${aws_s3_bucket.frontend.arn}/*"
-      }
-    ]
-  })
-}
-
-
 

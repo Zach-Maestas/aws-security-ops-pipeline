@@ -66,9 +66,17 @@ variable "rds_master_secret_arn" {
 variable "api_image_tag" {
   description = "Docker image tag for the API container"
   type        = string
+  default     = "latest"
 }
 
 variable "db_init_image_tag" {
   description = "Docker image tag for the DB Init container"
   type        = string
+  default     = "latest"
+}
+
+variable "api_desired_count" {
+  description = "Desired number of API tasks to run (0 for initial deploy, 1 after db_init)"
+  type        = number
+  default     = 0
 }
