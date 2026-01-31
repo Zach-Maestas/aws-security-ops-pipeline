@@ -1,4 +1,16 @@
-# Create an ACM certificate
+/*
+==============================================================================
+ACM Module: TLS Certificate Management
+==============================================================================
+Provisions and validates an AWS Certificate Manager (ACM) certificate:
+- Creates ACM certificate for the API domain
+- Automatically creates DNS validation records in Route 53
+- Waits for certificate validation to complete
+- Used by ALB for HTTPS termination
+==============================================================================
+*/
+
+# ACM Certificate
 resource "aws_acm_certificate" "this" {
   domain_name       = var.domain_name
   validation_method = "DNS"

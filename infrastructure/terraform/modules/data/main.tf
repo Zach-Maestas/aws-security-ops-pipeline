@@ -1,3 +1,15 @@
+/*
+==============================================================================
+Data Module: RDS PostgreSQL Database
+==============================================================================
+Provisions a PostgreSQL RDS instance with:
+- Storage encryption at rest
+- AWS-managed master password (stored in Secrets Manager)
+- Private subnet placement (no public access)
+- Automated backups with 7-day retention
+==============================================================================
+*/
+
 # DB Subnet Group
 resource "aws_db_subnet_group" "this" {
   name       = "${var.project}-db-subnet-group"
@@ -20,7 +32,7 @@ resource "aws_db_instance" "this" {
   port                        = var.db_port
   db_subnet_group_name        = aws_db_subnet_group.this.name
   vpc_security_group_ids      = [var.rds_sg_id]
-  multi_az                    = true
+  multi_az                    = false # Cost optimization: single-AZ deployment
   publicly_accessible         = false
   backup_retention_period     = 7
   skip_final_snapshot         = true

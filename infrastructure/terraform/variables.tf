@@ -1,7 +1,7 @@
 variable "project" {
-  description = "Project name"
+  description = "Project name used for resource naming and tagging"
   type        = string
-  default     = "secure-capstone"
+  default     = "devsecops-security-ops"
 }
 
 variable "vpc_cidr" {

@@ -1,3 +1,16 @@
+/*
+==============================================================================
+App Module: Application Infrastructure
+==============================================================================
+Provisions application tier components:
+- Application Load Balancer (ALB) with HTTPS
+- ECS Fargate cluster and service
+- ECR repositories for container images
+- IAM roles for ECS task execution
+- S3 bucket for static frontend hosting
+==============================================================================
+*/
+
 # Application Load Balancer
 resource "aws_lb" "this" {
   name               = "${var.project}-alb"
@@ -97,7 +110,7 @@ resource "aws_iam_role" "ecs_exec_app" {
       }
     ]
   })
-  
+
 
   tags = {
     Name = "${var.project}-ecs-exec-app-role"
@@ -188,11 +201,12 @@ resource "aws_ecs_task_definition" "api" {
 
 # ECS Service (API)
 resource "aws_ecs_service" "api" {
-  name            = "${var.project}-api-service"
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.api.arn
-  desired_count   = 0 # Start with 0, let CI/CD initialize DB then add tasks
-  launch_type     = "FARGATE"
+  name                               = "${var.project}-api-service"
+  cluster                            = aws_ecs_cluster.this.id
+  task_definition                    = aws_ecs_task_definition.api.arn
+  desired_count                      = var.api_desired_count
+  deployment_minimum_healthy_percent = 0 # Allow zero-downtime deployments
+  launch_type                        = "FARGATE"
 
   load_balancer {
     target_group_arn = aws_lb_target_group.app.arn
@@ -214,19 +228,14 @@ resource "aws_ecs_service" "api" {
 }
 
 /*
---------------------------------------------------------------
+==============================================================================
 S3 Bucket for Frontend Hosting
---------------------------------------------------------------
+==============================================================================
 */
 
 # S3 Bucket
 resource "aws_s3_bucket" "frontend" {
-  bucket        = "${var.project}-frontend"
-  force_destroy = false
-
-  lifecycle {
-    prevent_destroy = true
-  }
+  bucket = "${var.project}-frontend"
 
   tags = {
     Name = "${var.project}-frontend"
