@@ -39,3 +39,7 @@ Thumbs.db
 *.tfstate
 *.tfstate.*
 terraform.tfvars
+tfplan
+
+# Claude
+CLAUDE.md
