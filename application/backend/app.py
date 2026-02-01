@@ -30,7 +30,6 @@ if missing:
 # ------------------------------------------------------------------------------
 def get_db_connection():
     """Return a new PostgreSQL connection with SSL enforced."""
-    sslmode = os.environ.get("DB_SSLMODE", "prefer")
     return psycopg2.connect(
         host=os.environ["DB_HOST"],
         port=int(os.environ.get("DB_PORT", 5432)),
@@ -38,7 +37,7 @@ def get_db_connection():
         user=os.environ["DB_USERNAME"],
         password=os.environ["DB_PASSWORD"],
         connect_timeout=5,
-        sslmode=sslmode
+        sslmode="require"
     )
 
 # ------------------------------------------------------------------------------
