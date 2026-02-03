@@ -61,7 +61,7 @@ Reproducible Terraform deployment producing a working HTTPS endpoint: ALB → EC
 ### Phase 1: CI/CD Pipeline with OIDC — 🔲 Planned
 GitHub Actions CI running on PRs and merges with OIDC-based AWS authentication — no long-lived access keys. Includes formatting, linting, unit tests, least-privilege CI roles, and versioned image builds.
 
-### Phase 2: Security Operations — 🔲 Planned
+### Phase 2: Cloud Security — logging, detection, monitoring and incident response — 🔲 Planned
 CloudTrail, GuardDuty, and Security Hub integration with a documented triage workflow. Includes automated incident response via EventBridge/Lambda with a written incident narrative.
 
 ### Phase 3: DevSecOps Pipeline Gates — 🔲 Planned
