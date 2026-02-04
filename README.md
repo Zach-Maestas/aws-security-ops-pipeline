@@ -1,16 +1,18 @@
-# AWS Automated Cloud Security Operations & DevSecOps Capstone
+# AWS Cloud Security Operations & DevSecOps Portfolio Project
 
-A production-patterned AWS infrastructure project demonstrating cloud security engineering: secure networking, least-privilege IAM, secrets management, containerized deployment, and reproducible infrastructure-as-code — built to be deployed, torn down, and redeployed from a single command.
+A production-patterned AWS infrastructure project demonstrating cloud security engineering: secure networking, least-privilege IAM, secrets management, containerized deployment, detection and incident response, and DevSecOps pipeline security.
+
+Built to be deployed, torn down, and redeployed from a single command.
 
 ## Architecture
 
-<!-- TODO: Add architecture diagram (draw.io, Lucidchart, or Mermaid) -->
+<!-- TODO: Add architecture diagram -->
 
 ### Components
 | Layer | Service | Purpose |
 |-------|---------|---------|
 | Networking | VPC, Public/Private Subnets, NAT Gateway | Network isolation — compute and data in private subnets |
-| Compute | ECS Fargate | Serverless container orchestration, no EC2 management |
+| Compute | ECS Fargate | Serverless container orchestration |
 | Load Balancing | ALB + ACM | HTTPS termination with valid TLS certificate |
 | Data | RDS PostgreSQL | Managed relational database in private subnet |
 | Secrets | AWS Secrets Manager | Runtime credential injection, no plaintext secrets |
@@ -26,7 +28,7 @@ A production-patterned AWS infrastructure project demonstrating cloud security e
 | Secrets management | DB credentials via Secrets Manager, injected at runtime | Task definition config |
 | TLS/HTTPS | ALB listener with ACM certificate | ALB listener configuration |
 | No broad ingress | Security groups scoped to specific ports and sources | SG rule audit |
-| Non-root container | Application runs as non-root user | Dockerfile `USER` directive |
+| Non-root container | Application runs as non-root user | Dockerfile USER directive |
 
 ## Quick Start
 
@@ -55,33 +57,46 @@ make destroy
 
 ## Project Phases
 
-### Phase 0: Clean Baseline Deploy — ✅ Complete
-Reproducible Terraform deployment producing a working HTTPS endpoint: ALB → ECS Fargate → RDS, with Secrets Manager integration. I utilized a "bootstrap" method with Bash scripting to allow for teardown of entire infrastructure without having to manually re-initialize the RDS instance each time (done through ECS db_init task). Also, I refocused the project on security controls, and removed components not serving a security objective like the S3 frontend.
+### Phase 1: Secure Baseline Infrastructure — ✅ Complete
+Reproducible Terraform deployment producing a working HTTPS endpoint: ALB → ECS Fargate → RDS, with Secrets Manager integration and least-privilege IAM.
 
-### Phase 1: CI/CD Pipeline with OIDC — 🔲 Planned
-GitHub Actions CI running on PRs and merges with OIDC-based AWS authentication — no long-lived access keys. Includes formatting, linting, unit tests, least-privilege CI roles, and versioned image builds.
+Key work:
+- VPC with public/private subnet isolation across availability zones
+- ECS Fargate with task-level secrets injection
+- RDS PostgreSQL with security group scoped access
+- Bootstrap method using ECS db_init task for repeatable teardown/rebuild
+- CloudWatch logging for observability
 
-### Phase 2: Cloud Security — logging, detection, monitoring and incident response — 🔲 Planned
-CloudTrail, GuardDuty, and Security Hub integration with a documented triage workflow. Includes automated incident response via EventBridge/Lambda with a written incident narrative.
+### Phase 2: Cloud Security — Detection, Monitoring, and Incident Response — 🔲 Next
+Demonstrate operational security capabilities: detect threats, investigate findings, and respond to incidents.
 
-### Phase 3: DevSecOps Pipeline Gates — 🔲 Planned
-Security scanning in CI: dependency/supply chain scanning, container image scanning, IaC security analysis (tfsec/checkov), and secret detection with enforced pass/fail gates.
+Planned work:
+- CloudTrail enabled and queryable for audit trails
+- GuardDuty for threat detection with Security Hub aggregation
+- CloudWatch log organization with documented triage workflow
+- Automated response via EventBridge and Lambda
+- Simulated security incident with full detect → investigate → respond lifecycle
+- Written incident narrative documenting detection, response, and lessons learned
+- Python scripting for detection and triage automation
 
-### Phase 4: Environment Separation — 🔲 Planned
-Multi-environment deployment (dev/staging/prod) with environment-specific configurations, promotion workflows, and isolated state management.
+### Phase 3: DevSecOps — Pipeline Security Gates — 🔲 Planned
+Shift security left by embedding scanning and policy enforcement into the development workflow.
+
+Planned work:
+- GitHub Actions with OIDC-based AWS authentication (no stored credentials)
+- Security scanning: secret detection, IaC scanning (tfsec/checkov), container image scanning
+- Deliberate vulnerability introduction → scanner detection → documented remediation
+- Pipeline gates that block merges on security failures
+- Before/after evidence showing the security feedback loop in action
 
 ## Evidence
 
 Evidence artifacts for completed phases are in [`docs/evidence/`](docs/evidence/).
 
-<!-- Link to specific evidence as phases complete -->
-
 ## Known Limitations
 
-- Single environment (dev) — no staging/prod separation yet
-- ECR repository names and ECS cluster names are hardcoded in deployment scripts
-- No CI/CD pipeline yet (Phase 1)
-- No automated security scanning or alerting (Phases 2-3)
+- Single environment (dev) — multi-environment separation is out of scope for this project
+- ECR repository and ECS cluster names are hardcoded in deployment scripts
 - Cost-optimized for portfolio use — designed for full teardown/rebuild, not persistent uptime
 
 ## Tech Stack
@@ -96,21 +111,27 @@ Evidence artifacts for completed phases are in [`docs/evidence/`](docs/evidence/
 
 ## Documentation
 
-- [Deployment Guide](docs/deployment.md) — detailed deploy, verify, teardown, and troubleshooting steps
-- [Security Design](docs/security.md) — in-depth security controls, IAM design, and trade-off rationale
+- [Deployment Guide](docs/deployment.md) — deploy, verify, teardown, and troubleshooting
+- [Security Design](docs/security.md) — security controls, IAM design, and trade-off rationale
 
 ## Repository Structure
 
 ```
 .
 ├── application/
-│   └── backend/          # Flask API (Dockerfile, app.py, Gunicorn)
+│   └── backend/              # Flask API (Dockerfile, app.py, Gunicorn)
 ├── infrastructure/
 │   ├── scripts/
-│   │   ├── db_init/      # DB initialization container
-│   │   └── deploy/             # Build, init, and scale scripts
+│   │   ├── db_init/          # DB initialization container
+│   │   └── deploy/           # Build, init, and scale scripts
 │   └── terraform/
-│       └── modules/      # network, app, data, secrets, acm
-├── Makefile              # Deploy/destroy orchestration
-└── README.md             # Project roadmap and standards
+│       ├── backend-state-init/   # Bootstrap for remote state (S3 + DynamoDB)
+│       ├── ci-oidc/              # GitHub Actions OIDC federation
+│       └── modules/              # network, app, data, secrets, acm
+├── Makefile                  # Deploy/destroy orchestration
+└── README.md
 ```
+
+## Related Projects
+
+This project builds on [Secure AWS Architecture Capstone](https://github.com/Zach-Maestas/secure-aws-architecture-capstone), which established the foundational VPC architecture and EC2-based deployment. This project evolved that baseline to ECS Fargate with secrets injection, and adds security operations and DevSecOps capabilities.
