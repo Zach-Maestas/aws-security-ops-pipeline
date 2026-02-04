@@ -11,5 +11,8 @@ destroy:
 	bash $(SCRIPTS_DIR)/03_scale_ecs_service.sh 0
 	cd $(TERRAFORM_DIR) && terraform destroy -auto-approve
 
+fmt:
+	cd $(TERRAFORM_DIR) && terraform fmt -recursive
+
 validate:
 	cd $(TERRAFORM_DIR) && terraform fmt -check -recursive && terraform validate
