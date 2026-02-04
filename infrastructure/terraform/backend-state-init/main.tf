@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "tfstate" {
-    bucket = "devsecops-security-ops-tfstate-bucket"
+    bucket = "secops-pipeline-tfstate"
 }
 
 resource "aws_dynamodb_table" "tflock" {
