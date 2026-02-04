@@ -1,4 +1,4 @@
-# AWS Cloud Security Operations & DevSecOps Portfolio Project
+# AWS Cloud Security Operations & DevSecOps Project
 
 A production-patterned AWS infrastructure project demonstrating cloud security engineering: secure networking, least-privilege IAM, secrets management, containerized deployment, detection and incident response, and DevSecOps pipeline security.
 
