@@ -9,6 +9,9 @@ set -euo pipefail
 
 echo "==> Step 1: Building and pushing Docker images to ECR"
 
+# Set project name
+PROJECT_NAME="secops-pipeline"
+
 # Navigate to repo root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
@@ -22,8 +25,8 @@ AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 AWS_REGION=$(aws configure get region || echo "us-east-1")
 
 # ECR repository URIs
-API_REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/devsecops-security-ops-api-repo"
-DB_INIT_REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/devsecops-security-ops-db-init-repo"
+API_REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PROJECT_NAME}-api-repo"
+DB_INIT_REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PROJECT_NAME}-db-init-repo"
 
 echo "AWS Account: ${AWS_ACCOUNT_ID}"
 echo "AWS Region: ${AWS_REGION}"

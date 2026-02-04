@@ -12,8 +12,12 @@ DESIRED_COUNT="${1:-1}"
 
 echo "==> Step 3: Scaling ECS API service to ${DESIRED_COUNT} tasks"
 
-CLUSTER_NAME="devsecops-security-ops-ecs-cluster"
-SERVICE_NAME="devsecops-security-ops-api-service"
+# Set project name
+PROJECT_NAME="secops-pipeline"
+
+# Set cluster & service name variables
+CLUSTER_NAME="${PROJECT_NAME}-ecs-cluster"
+SERVICE_NAME="${PROJECT_NAME}-api-service"
 
 # Update the service desired count
 echo "==> Updating ECS service..."
@@ -45,7 +49,7 @@ if [ "${DESIRED_COUNT}" -gt 0 ]; then
   echo ""
   echo "==> Checking ALB target health..."
   TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups \
-    --names devsecops-security-ops-tg \
+    --names ${PROJECT_NAME}-tg \
     --query 'TargetGroups[0].TargetGroupArn' \
     --output text)
 
