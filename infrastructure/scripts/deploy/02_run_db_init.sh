@@ -9,19 +9,22 @@ set -euo pipefail
 
 echo "==> Step 2: Running DB initialization task"
 
+# Set project name
+PROJECT_NAME="secops-pipeline"
+
 # Get cluster and task definition info
-CLUSTER_NAME="devsecops-security-ops-ecs-cluster"
-TASK_DEF="devsecops-security-ops-db-init-task"
+CLUSTER_NAME="${PROJECT_NAME}-ecs-cluster"
+TASK_DEF="${PROJECT_NAME}-db-init-task"
 
 # Get subnets and security group from terraform output or AWS
 echo "==> Fetching network configuration..."
 SUBNETS=$(aws ec2 describe-subnets \
-  --filters "Name=tag:Name,Values=devsecops-security-ops-private-app-*" \
+  --filters "Name=tag:Name,Values=${PROJECT_NAME}-private-app-*" \
   --query 'Subnets[*].SubnetId' \
   --output text | tr '\t' ',')
 
 SECURITY_GROUP=$(aws ec2 describe-security-groups \
-  --filters "Name=tag:Name,Values=devsecops-security-ops-ecs-tasks-sg" \
+  --filters "Name=tag:Name,Values=${PROJECT_NAME}-ecs-tasks-sg" \
   --query 'SecurityGroups[0].GroupId' \
   --output text)
 
