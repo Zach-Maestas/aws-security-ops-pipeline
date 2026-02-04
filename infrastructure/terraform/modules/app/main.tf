@@ -145,7 +145,7 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_app_policy_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Policy Attachment for App Secrets Access
+# Policy Attachment for App Secrets access
 resource "aws_iam_role_policy_attachment" "app_secrets_policy_attach" {
   role       = aws_iam_role.ecs_exec_app.name
   policy_arn = aws_iam_policy.app_secrets_policy.arn
