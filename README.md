@@ -1,4 +1,4 @@
-# AWS DevSecOps Security Operations Project
+# AWS Automated Cloud Security Operations & DevSecOps Capstone
 
 A production-patterned AWS infrastructure project demonstrating cloud security engineering: secure networking, least-privilege IAM, secrets management, containerized deployment, and reproducible infrastructure-as-code — built to be deployed, torn down, and redeployed from a single command.
 
