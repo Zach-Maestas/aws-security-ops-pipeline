@@ -54,14 +54,14 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_db_init_policy_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# IAM Policy for DB Init Secrets Access
+# IAM Policy for DB Init Secrets access
 resource "aws_iam_policy" "db_init_secrets_policy" {
   name        = "${var.project}-db-init-secrets-policy"
   description = "Policy to allow ECS task to read DB admin credentials from Secrets Manager"
   policy      = data.aws_iam_policy_document.db_init_exec_secrets.json
 }
 
-# Policy Attachment for DB Init Secrets Access
+# Policy Attachment for DB Init Secrets access
 resource "aws_iam_role_policy_attachment" "db_init_secrets_policy_attach" {
   role       = aws_iam_role.ecs_exec_db_init.name
   policy_arn = aws_iam_policy.db_init_secrets_policy.arn
