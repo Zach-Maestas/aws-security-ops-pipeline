@@ -65,7 +65,6 @@ Key work:
 - ECS Fargate with task-level secrets injection
 - RDS PostgreSQL with security group scoped access
 - Bootstrap method using ECS db_init task for repeatable teardown/rebuild
-- CloudWatch logging for observability
 
 ### Phase 2: Cloud Security — Detection, Monitoring, and Incident Response — 🔲 Next
 Demonstrate operational security capabilities: detect threats, investigate findings, and respond to incidents.
