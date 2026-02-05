@@ -131,7 +131,7 @@ DNS: Route 53 Record for ALB
 ==============================================================================
 */
 
-# Create Route 53 A record for the API pointing to the ALB
+# Create Route 53 A record that resolves the API domain to the ALB
 resource "aws_route53_record" "api_record" {
   zone_id = var.route53_zone_id
   name    = var.domain_name
