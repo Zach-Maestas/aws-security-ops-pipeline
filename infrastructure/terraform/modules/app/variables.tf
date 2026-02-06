@@ -63,6 +63,16 @@ variable "rds_master_secret_arn" {
   type        = string
 }
 
+variable "domain_name" {
+  description = "Domain name for the Route 53 A record (e.g. api.example.com)"
+  type        = string
+}
+
+variable "route53_zone_id" {
+  description = "Route 53 Hosted Zone ID for DNS record creation"
+  type        = string
+}
+
 variable "api_image_tag" {
   description = "Docker image tag for the API container"
   type        = string

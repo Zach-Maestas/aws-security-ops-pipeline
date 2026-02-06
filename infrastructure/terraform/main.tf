@@ -67,23 +67,6 @@ module "app" {
   db_name                = module.data.db_name
   db_port                = module.data.db_port
   rds_master_secret_arn  = module.data.rds_master_secret_arn
-}
-
-/*
-==============================================================================
-DNS: Route 53 Record for ALB
-==============================================================================
-*/
-
-# Create Route 53 A record that resolves the API domain to the ALB
-resource "aws_route53_record" "api_record" {
-  zone_id = var.route53_zone_id
-  name    = var.domain_name
-  type    = "A"
-
-  alias {
-    name                   = module.app.alb_dns_name
-    zone_id                = module.app.alb_zone_id
-    evaluate_target_health = true
-  }
+  domain_name            = var.domain_name
+  route53_zone_id        = var.route53_zone_id
 }
