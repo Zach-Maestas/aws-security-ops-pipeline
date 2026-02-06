@@ -1,6 +1,6 @@
 # AWS Cloud Security Operations & DevSecOps Project
 
-![Architecture Diagram](./docs/)
+![Architecture Diagram](./docs/architecture.png)
 
 A production-patterned AWS infrastructure project demonstrating cloud security engineering: secure networking, least-privilege IAM, secrets management, containerized deployment, detection and incident response, and DevSecOps pipeline security.
 
