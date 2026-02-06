@@ -1,12 +1,12 @@
 /*
 ==============================================================================
-Network Module: VPC and Subnet Configuration
+Network Module: VPC, Subnets, and Connectivity
 ==============================================================================
 Provisions a multi-AZ VPC with:
 - Public subnets for ALB (internet-facing)
 - Private application subnets for ECS tasks
 - Private database subnets for RDS
-- Route tables for public and private routing
+- Route tables, IGW, and NAT gateways for internet connectivity
 ==============================================================================
 */
 

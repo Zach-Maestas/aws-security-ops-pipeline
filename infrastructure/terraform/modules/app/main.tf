@@ -3,11 +3,11 @@
 App Module: Application Infrastructure
 ==============================================================================
 Provisions application tier components:
+- Route 53 DNS record for API domain
 - Application Load Balancer (ALB) with HTTPS
 - ECS Fargate cluster and service
 - ECR repositories for container images
 - IAM roles for ECS task execution
-- S3 bucket for static frontend hosting
 ==============================================================================
 */
 
