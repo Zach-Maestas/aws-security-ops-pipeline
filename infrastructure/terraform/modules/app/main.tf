@@ -3,13 +3,27 @@
 App Module: Application Infrastructure
 ==============================================================================
 Provisions application tier components:
+- Route 53 DNS record for API domain
 - Application Load Balancer (ALB) with HTTPS
 - ECS Fargate cluster and service
 - ECR repositories for container images
 - IAM roles for ECS task execution
-- S3 bucket for static frontend hosting
 ==============================================================================
 */
+
+
+# Route 53 A record → ALB
+resource "aws_route53_record" "api_record" {
+  zone_id = var.route53_zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.this.dns_name
+    zone_id                = aws_lb.this.zone_id
+    evaluate_target_health = true
+  }
+}
 
 # Application Load Balancer
 resource "aws_lb" "this" {

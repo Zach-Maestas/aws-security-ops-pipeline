@@ -18,7 +18,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 # Define context paths
 API_CTX="${REPO_ROOT}/application/backend"
-DB_INIT_CTX="${REPO_ROOT}/infrastructure/scripts/db_init"
+DB_INIT_CTX="${REPO_ROOT}/infrastructure/scripts/db-init"
 
 # Get AWS account and region
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
