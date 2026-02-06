@@ -28,6 +28,14 @@ module "network" {
   private_db_subnet_cidrs  = var.private_db_subnet_cidrs
 }
 
+# ACM Certificate
+module "acm" {
+  source         = "./modules/acm"
+  project        = var.project
+  domain_name    = var.domain_name
+  hosted_zone_id = var.route53_zone_id
+}
+
 # Secrets Module
 module "secrets" {
   source  = "./modules/secrets"
@@ -41,14 +49,6 @@ module "data" {
   vpc_id                = module.network.vpc_id
   private_db_subnet_ids = module.network.private_db_subnet_ids
   rds_sg_id             = module.network.rds_sg_id
-}
-
-# ACM Certificate
-module "acm" {
-  source         = "./modules/acm"
-  project        = var.project
-  domain_name    = var.domain_name
-  hosted_zone_id = var.route53_zone_id
 }
 
 # Application Module
