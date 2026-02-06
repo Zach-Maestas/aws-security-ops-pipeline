@@ -102,3 +102,42 @@ resource "aws_route_table_association" "private_db_subnets" {
   subnet_id      = aws_subnet.private_db[count.index].id
   route_table_id = aws_route_table.private[count.index].id
 }
+
+# --- INTERNET CONNECTIVITY ---
+
+# Internet Gateway
+resource "aws_internet_gateway" "this" {
+  vpc_id = aws_vpc.main.id
+  tags   = { Name = "${var.project}-igw" }
+}
+
+# Elastic IPs for NAT Gateways
+resource "aws_eip" "nat" {
+  count  = length(aws_subnet.public)
+  domain = "vpc"
+}
+
+# NAT Gateways (one per AZ, placed in public subnets)
+resource "aws_nat_gateway" "this" {
+  count         = length(aws_subnet.public)
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+  tags = {
+    Name = "${var.project}-nat-${count.index + 1}"
+  }
+}
+
+# Route for public subnets → IGW
+resource "aws_route" "public_internet_access" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.this.id
+}
+
+# Route for private subnets → NAT
+resource "aws_route" "private_internet_access" {
+  count                  = length(aws_route_table.private)
+  route_table_id         = aws_route_table.private[count.index].id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.this[count.index].id
+}
