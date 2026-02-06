@@ -13,5 +13,5 @@ set -eu
 : "${APP_DB_PASSWORD:?missing APP_DB_PASSWORD}"
 
 psql -v ON_ERROR_STOP=1 -f /db-init/schema.sql
-psql -v ON_ERROR_STOP=1 -v app_password="$APP_DB_PASSWORD" -f /db-init/bootstrap.sql
+psql -v ON_ERROR_STOP=1 -v app_username="$APP_DB_USERNAME" -v app_password="$APP_DB_PASSWORD" -f /db-init/bootstrap.sql
 psql -v ON_ERROR_STOP=1 -f /db-init/seed.sql
