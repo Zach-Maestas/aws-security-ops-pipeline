@@ -48,7 +48,7 @@ Two separate IAM roles with distinct responsibilities:
 
 | Role | Purpose | Permissions |
 |------|---------|-------------|
-| Execution Role | ECS agent pulls images and writes logs | ECR read, CloudWatch Logs write, Secrets Manager read |
+| Execution Role | ECS agent pulls images and injects secrets | ECR read, Secrets Manager read |
 | Task Role | Application runtime identity | Scoped to only what the app needs |
 
 ### Least Privilege Approach
@@ -86,7 +86,7 @@ Secrets Manager → ECS Task Definition (valueFrom) → Container environment va
 
 - **Non-root user** — the Dockerfile sets a non-root `USER` for the application process.
 - **Minimal base image** — Python slim variant, reducing attack surface.
-- **No SSH** — Fargate tasks have no SSH daemon; debugging is done through CloudWatch Logs.
+- **No SSH** — Fargate tasks have no SSH daemon; debugging through logs (CloudWatch planned for Phase 2).
 - **Immutable deployments** — new code requires a new image push and service update.
 
 ---
@@ -97,8 +97,7 @@ These are planned for future phases and documented here for transparency:
 
 | Gap | Planned Phase | Notes |
 |-----|--------------|-------|
-| CI/CD pipeline | Phase 1 | No automated build/deploy yet |
-| OIDC for CI | Phase 1 | Current deploys use local AWS credentials |
+| CloudWatch logging | Phase 2 | No container log configuration yet |
 | CloudTrail audit logging | Phase 2 | No API-level audit trail |
 | GuardDuty threat detection | Phase 2 | No automated threat detection |
 | Security Hub posture | Phase 2 | No centralized findings dashboard |

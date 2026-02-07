@@ -19,7 +19,7 @@ Built to be deployed, torn down, and redeployed from a single command.
 | Data | RDS PostgreSQL | Managed relational database in private subnet |
 | Secrets | AWS Secrets Manager | Runtime credential injection, no plaintext secrets |
 | Registry | ECR | Private container image storage |
-| Observability | CloudWatch Logs | Centralized container and application logging |
+| Observability | CloudWatch Logs | Centralized logging (Phase 2) |
 
 ## Security Controls
 
@@ -66,7 +66,7 @@ Key work:
 - VPC with public/private subnet isolation across availability zones
 - ECS Fargate with task-level secrets injection
 - RDS PostgreSQL with security group scoped access
-- Bootstrap method using ECS db_init task for repeatable teardown/rebuild
+- Bootstrap method using ECS db-init task for repeatable teardown/rebuild
 
 ### Phase 2: Cloud Security — Detection, Monitoring, and Incident Response — 🔲 Next
 Demonstrate operational security capabilities: detect threats, investigate findings, and respond to incidents.
@@ -107,7 +107,7 @@ Evidence artifacts for completed phases are in [`docs/evidence/`](docs/evidence/
 | Terraform | >= 1.0 | Infrastructure as Code |
 | AWS ECS Fargate | - | Container orchestration |
 | Flask + Gunicorn | Python 3.x | API application |
-| PostgreSQL | 15 | Relational database (RDS) |
+| PostgreSQL | 16 | Relational database (RDS) |
 | Docker | buildx | Container builds |
 
 ## Documentation
@@ -123,7 +123,7 @@ Evidence artifacts for completed phases are in [`docs/evidence/`](docs/evidence/
 │   └── backend/              # Flask API (Dockerfile, app.py, Gunicorn)
 ├── infrastructure/
 │   ├── scripts/
-│   │   ├── db_init/          # DB initialization container
+│   │   ├── db-init/           # DB initialization container
 │   │   └── deploy/           # Build, init, and scale scripts
 │   └── terraform/
 │       ├── backend-state-init/   # Bootstrap for remote state (S3 + DynamoDB)
