@@ -1,6 +1,6 @@
 /*
 ==============================================================================
-Root Configuration: DevSecOps Security Operations Platform
+Root Configuration: Security Operations Pipeline
 ==============================================================================
 Orchestrates all infrastructure modules for a secure, multi-tier web application:
 - Network: VPC, subnets, routing, NAT gateways
