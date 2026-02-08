@@ -1,6 +1,6 @@
 # Security Design
 
-This document details the security controls implemented in the AWS DevSecOps Security Operations project. For a summary, see the [README Security Controls Gable](../README.md#security-controls).
+This document details the security controls implemented in the AWS DevSecOps Security Operations project. For a summary, see the [README Security Controls Table](../README.md#security-controls).
 
 ---
 
