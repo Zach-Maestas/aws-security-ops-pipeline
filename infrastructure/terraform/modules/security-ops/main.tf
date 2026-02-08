@@ -24,6 +24,7 @@ resource "aws_s3_bucket" "cloudtrail_logs" {
   force_destroy = true
 }
 
+# S3 Bucket Public Access Block
 resource "aws_s3_bucket_public_access_block" "cloudtrail_logs" {
   bucket = aws_s3_bucket.cloudtrail_logs.id
 
