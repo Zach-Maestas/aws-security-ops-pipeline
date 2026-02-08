@@ -214,7 +214,7 @@ resource "aws_ecs_task_definition" "api" {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.ecs_app_logs_group.name
-          "awslogs-region"        = var.region
+          "awslogs-region"        = data.aws_region.current.name
           "awslogs-stream-prefix" = "ecs"
         }
       }
@@ -259,6 +259,6 @@ resource "aws_cloudwatch_log_group" "ecs_app_logs_group" {
   retention_in_days = 7
 
   tags = {
-    Name = "${var.project}-ecs-app-logs"
+    Name        = "${var.project}-ecs-app-logs"
   }
 }
