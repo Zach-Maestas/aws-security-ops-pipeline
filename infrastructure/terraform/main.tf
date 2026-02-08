@@ -55,6 +55,7 @@ module "data" {
 module "app" {
   source                 = "./modules/app"
   project                = var.project
+  region                 = var.region
   vpc_id                 = module.network.vpc_id
   public_subnet_ids      = module.network.public_subnet_ids
   private_app_subnet_ids = module.network.private_app_subnet_ids

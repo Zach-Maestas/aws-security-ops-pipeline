@@ -123,6 +123,24 @@ resource "aws_ecs_task_definition" "db_init" {
           valueFrom = "${var.db_app_credentials_arn}:password::"
         }
       ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs_db_init_logs_group.name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
     }
   ])
+}
+
+resource "aws_cloudwatch_log_group" "ecs_db_init_logs_group" {
+  name              = "/ecs/${var.project}-db-init"
+  retention_in_days = 7
+
+  tags = {
+    Name = "${var.project}-ecs-db-init-logs"
+  }
 }

@@ -11,7 +11,6 @@ Provisions application tier components:
 ==============================================================================
 */
 
-
 # Route 53 A record → ALB
 resource "aws_route53_record" "api_record" {
   zone_id = var.route53_zone_id
@@ -210,6 +209,15 @@ resource "aws_ecs_task_definition" "api" {
           valueFrom = "${var.db_app_credentials_arn}:password::"
         }
       ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs_app_logs_group.name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
     }
   ])
 }
@@ -246,3 +254,11 @@ resource "aws_ecs_service" "api" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "ecs_app_logs_group" {
+  name              = "/ecs/${var.project}-app"
+  retention_in_days = 7
+
+  tags = {
+    Name = "${var.project}-ecs-app-logs"
+  }
+}
