@@ -128,7 +128,7 @@ resource "aws_ecs_task_definition" "db_init" {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.ecs_db_init_logs_group.name
-          "awslogs-region"        = var.region
+          "awslogs-region"        = data.aws_region.current.name
           "awslogs-stream-prefix" = "ecs"
         }
       }

@@ -8,6 +8,7 @@ Orchestrates all infrastructure modules for a secure, multi-tier web application
 - Data: RDS PostgreSQL database
 - ACM: TLS certificate for HTTPS
 - App: ALB, ECS Fargate, ECR
+- Security Ops: CloudTrail, GuardDuty, Security Hub, automated response
 
 This configuration deploys a production-ready architecture with:
 - Encrypted data at rest and in transit
@@ -55,7 +56,6 @@ module "data" {
 module "app" {
   source                 = "./modules/app"
   project                = var.project
-  region                 = var.region
   vpc_id                 = module.network.vpc_id
   public_subnet_ids      = module.network.public_subnet_ids
   private_app_subnet_ids = module.network.private_app_subnet_ids
@@ -70,4 +70,10 @@ module "app" {
   rds_master_secret_arn  = module.data.rds_master_secret_arn
   domain_name            = var.domain_name
   route53_zone_id        = var.route53_zone_id
+}
+
+# Security & Operations Module
+module "security_ops" {
+  source  = "./modules/security-ops"
+  project = var.project
 }
