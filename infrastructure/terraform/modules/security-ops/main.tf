@@ -9,7 +9,7 @@ Provisions security operations components:
 ==============================================================================
 */
 
-# CloudTrail
+# CloudTrail Initialization
 resource "aws_cloudtrail" "this" {
   depends_on = [aws_s3_bucket_policy.cloudtrail_logs]
 
@@ -37,7 +37,7 @@ resource "aws_s3_bucket_public_access_block" "cloudtrail_logs" {
 # S3 bucket policy granting CloudTrail permission to deliver logs
 data "aws_iam_policy_document" "cloudtrail_s3_access" {
   statement {
-    sid    = "AWSCloudTrailAclCheck"
+    sid    = "AWSCloudTrailACLCheck"
     effect = "Allow"
 
     principals {
