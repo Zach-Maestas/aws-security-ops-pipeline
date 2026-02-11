@@ -16,6 +16,9 @@ resource "aws_cloudtrail" "this" {
   name                          = "${var.project}-cloudtrail"
   s3_bucket_name                = aws_s3_bucket.cloudtrail_logs.id
   include_global_service_events = true
+
+  cloud_watch_logs_group_arn = aws_cloudwatch_log_group.cw_cloudtrail_logs_group.arn
+  cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail_cloudwatch_role.arn
 }
 
 # S3 Bucket for CloudTrail log delivery
@@ -84,4 +87,59 @@ data "aws_iam_policy_document" "cloudtrail_s3_access" {
 resource "aws_s3_bucket_policy" "cloudtrail_logs" {
   bucket = aws_s3_bucket.cloudtrail_logs.id
   policy = data.aws_iam_policy_document.cloudtrail_s3_access.json
+}
+
+# CloudWatch Log Group to ingest CloudTrail logs for real-time events
+resource "aws_cloudwatch_log_group" "cw_cloudtrail_logs_group" {
+  name              = "/cloudtrail/${var.project}-cloudtrail"
+  retention_in_days = 7
+
+  tags = {
+    Name = "${var.project}-cloudtrail-logs"
+  }
+}
+
+# IAM Role that allows CloudTrail to write CloudWatch Logs
+resource "aws_iam_role" "cloudtrail_cloudwatch_role" {
+  name = "${var.project}-cloudtrail-cloudwatch-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = { Service = "cloudtrail.amazonaws.com" }
+        Action    = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project}-cloudtrail-cloudwatch-role"
+  }
+}
+
+data "aws_iam_policy_document" "cloudtrail_cloudwatch_logs" {
+  statement {
+    sid    = "CloudWatchLogIngestionFromCloudTrail"
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = [
+      "${aws_cloudwatch_log_group.cw_cloudtrail_logs_group.arn}:*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "cloudtrail_cloudwatch_logs_policy" {
+  name        = "${var.project}-cloudtrail-cloudwatch-policy"
+  description = "Policy to allow CloudTrail to deliver logs to CloudWatch"
+  policy      = data.aws_iam_policy_document.cloudtrail_cloudwatch_logs.json
+}
+
+resource "aws_iam_role_policy_attachment" "cloudtrail_cloudwatch_logs_policy_attach" {
+  role       = aws_iam_role.cloudtrail_cloudwatch_role.name
+  policy_arn = aws_iam_policy.cloudtrail_cloudwatch_logs_policy.arn
 }
