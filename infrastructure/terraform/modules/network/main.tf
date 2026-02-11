@@ -108,7 +108,10 @@ resource "aws_route_table_association" "private_db_subnets" {
 # Internet Gateway
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.main.id
-  tags   = { Name = "${var.project}-igw" }
+
+  tags = {
+    Name = "${var.project}-igw"
+  }
 }
 
 # Elastic IPs for NAT Gateways
