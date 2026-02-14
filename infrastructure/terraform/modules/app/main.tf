@@ -197,6 +197,10 @@ resource "aws_ecs_task_definition" "api" {
         {
           name  = "DB_PORT"
           value = tostring(var.db_port)
+        },
+        {
+          name  = "LOG_LEVEL"
+          value = "INFO"
         }
       ]
 
@@ -255,6 +259,7 @@ resource "aws_ecs_service" "api" {
   }
 }
 
+# CloudWatch Log group for app logs
 resource "aws_cloudwatch_log_group" "ecs_app_logs_group" {
   name              = "/ecs/${var.project}-app"
   retention_in_days = 7

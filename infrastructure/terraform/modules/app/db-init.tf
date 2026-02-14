@@ -136,6 +136,7 @@ resource "aws_ecs_task_definition" "db_init" {
   ])
 }
 
+# CloudWatch Log group for db-init logs
 resource "aws_cloudwatch_log_group" "ecs_db_init_logs_group" {
   name              = "/ecs/${var.project}-db-init"
   retention_in_days = 7

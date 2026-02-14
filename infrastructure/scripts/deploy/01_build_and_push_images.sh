@@ -22,7 +22,7 @@ DB_INIT_CTX="${REPO_ROOT}/infrastructure/scripts/db-init"
 
 # Get AWS account and region
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-AWS_REGION=$(aws configure get region || echo "us-east-1")
+AWS_REGION=$(aws configure get region)
 
 # ECR repository URIs
 API_REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PROJECT_NAME}-api-repo"
@@ -46,8 +46,8 @@ echo "==> Building and pushing API image..."
 docker buildx build \
   --platform linux/amd64 \
   -t "${API_REPO_URI}:latest" \
-  --push \
-  "${API_CTX}"
+
+
 
 # Build and push DB Init image
 echo ""
