@@ -119,6 +119,7 @@ resource "aws_iam_role" "cloudtrail_cloudwatch_role" {
   }
 }
 
+# IAM Policy document to allow CloudTrail to upload logs to CloudWatch
 data "aws_iam_policy_document" "cloudtrail_cloudwatch_logs" {
   statement {
     sid    = "CloudWatchLogIngestionFromCloudTrail"
@@ -133,13 +134,30 @@ data "aws_iam_policy_document" "cloudtrail_cloudwatch_logs" {
   }
 }
 
+# IAM Policy that allows CloudTrail to delivery logs to CloudWatch
 resource "aws_iam_policy" "cloudtrail_cloudwatch_logs_policy" {
   name        = "${var.project}-cloudtrail-cloudwatch-policy"
   description = "Policy to allow CloudTrail to deliver logs to CloudWatch"
   policy      = data.aws_iam_policy_document.cloudtrail_cloudwatch_logs.json
 }
 
+# IAM Policy attachment for CloudTrail -> CloudWatch
 resource "aws_iam_role_policy_attachment" "cloudtrail_cloudwatch_logs_policy_attach" {
   role       = aws_iam_role.cloudtrail_cloudwatch_role.name
   policy_arn = aws_iam_policy.cloudtrail_cloudwatch_logs_policy.arn
 }
+
+# AWS GuardDuty
+resource "aws_guardduty_detector" "guardduty" {
+  enable = true
+}
+
+# Enable AWS GuardDuty S3 Detection
+resource "aws_guardduty_detector_feature" "s3_protection" {
+  detector_id = aws_guardduty_detector.guardduty.id
+  name        = "S3_DATA_EVENTS"
+  status      = "ENABLED"
+}
+
+# AWS Security Hub
+resource "aws_securityhub_account" "security_hub" {}
